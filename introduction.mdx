@@ -1,7 +1,7 @@
 ---
-title: "Chaos Navigation MCP Tools: AI Memory & Knowledge Integration"
+title: "Chaos Navigation MCP Tools: Memory & Knowledge"
 sidebarTitle: "Introduction"
-description: "Persistent memory, full-text search, and Capacities PKM integration for Claude — delivered as local MCP servers you control."
+description: "Persistent memory, full-text search, and Capacities PKM integration for Claude — delivered as local MCP servers you own and control."
 ---
 
 Chaos Navigation MCP Tools is a suite of local [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers that extend Claude with capabilities it lacks out of the box. The suite gives Claude cross-session memory backed by FTS5 full-text search, a bridge to the Capacities personal knowledge management app, and a ready-to-deploy remote MCP server template — all running on your own machine so you stay in control of your data.
@@ -23,7 +23,7 @@ Chaos Navigation MCP Tools is a suite of local [Model Context Protocol (MCP)](ht
 
 ## What's in the suite
 
-**Memory MCP** is a fork of `@whenmoon-afk/memory-mcp` with significantly improved FTS5 full-text search — including OR-expansion and prefix wildcards — plus auto-summarization, entity extraction, importance scoring, TTL management, and optional Substratia Cloud sync. Memories persist in a local SQLite database and are available to Claude in every future conversation.
+**Memory MCP** gives Claude persistent, searchable memory using SQLite with FTS5 full-text search — including OR-expansion and prefix wildcards — plus auto-summarization, entity extraction, importance scoring, TTL management, and optional Substratia Cloud sync. Memories persist in a local database and are available to Claude in every future conversation. The server exposes four tools to Claude: `memory_store`, `memory_recall`, `memory_forget`, and `memory_cloud`.
 
 **Python Utilities** are CLI tools that sit alongside the Memory MCP server. Use them to bulk-import markdown folders, import Claude Code session transcripts, search the memory database from the terminal, and export chat logs for archiving or analysis.
 

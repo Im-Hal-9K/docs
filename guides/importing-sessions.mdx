@@ -1,7 +1,7 @@
 ---
-title: "Import Claude Code Sessions into Memory"
+title: "Import Claude Code Session History into Memory MCP"
 sidebarTitle: "Import Sessions"
-description: "Automatically import all your past Claude Code conversations into the Memory MCP database for persistent cross-session recall."
+description: "Automatically import all your past Claude Code conversations into the Memory MCP database for persistent, searchable cross-session recall."
 ---
 
 Every Claude Code conversation is stored as a JSONL file on your machine under `~/.claude/projects/`. The `import_all_sessions.py` script reads those files, chunks them intelligently at topic boundaries, scrubs sensitive data, and writes them as searchable memories — giving Claude full context of everything you've worked on, across every future session.
@@ -12,7 +12,7 @@ The script handles the full pipeline automatically:
 
 - **Discovery** — scans `~/.claude/projects/` recursively for all `.jsonl` session files, skipping sub-agent logs (`agent-*.jsonl`) and sessions with fewer than 5 messages
 - **Extraction** — pulls readable text from all message types: user messages, assistant responses, tool calls (`Read`, `Write`, `Edit`, `Bash`, `WebSearch`), and tool results
-- **Scrubbing** — removes sensitive patterns before anything touches the database: Anthropic API keys, OpenAI-style keys, GitHub personal access tokens (`ghp_…`), inline API key assignments, and quoted passwords
+- **Scrubbing** — removes sensitive patterns before anything touches the database: Anthropic API keys (`sk-ant-api…`), generic API keys (`sk-…`), GitHub personal access tokens (`ghp_…`), inline API key assignments, and quoted passwords
 - **Chunking** — splits large sessions at topic boundaries (a substantive new user request) or every ~4,000 characters, whichever comes first
 - **Deduplication** — tracks imported sessions by source filename in metadata; re-running the script skips any session already in the database
 
@@ -60,7 +60,7 @@ curl -O https://raw.githubusercontent.com/Im-Hal-9K/claude-memory-tools/main/imp
     python import_all_sessions.py --rebuild-fts
     ```
 
-    This deletes and repopulates the `memories_fts` table from all active (non-deleted) memory entries.
+    This deletes and repopulates the full-text search index from all active (non-deleted) memory entries.
   </Step>
 </Steps>
 

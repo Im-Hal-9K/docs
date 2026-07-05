@@ -4,13 +4,13 @@ sidebarTitle: "Overview"
 description: "Memory MCP stores facts, entities, and preferences across Claude sessions using a local SQLite database with FTS5 full-text search."
 ---
 
-Memory MCP is a Node.js MCP server that gives Claude a durable, searchable memory store that survives across sessions. By default Claude forgets everything when a conversation ends — Memory MCP fixes that by writing memories to a local SQLite database on your machine and surfacing them automatically in future sessions. This package is a fork of `@whenmoon-afk/memory-mcp` v2.5.0 with significantly improved full-text search: multi-word queries use OR logic with prefix wildcards so Claude finds relevant memories even when your phrasing doesn't exactly match what was stored.
+Memory MCP is a Node.js MCP server that gives Claude a durable, searchable memory store that survives across sessions. By default Claude forgets everything when a conversation ends — Memory MCP fixes that by writing memories to a local SQLite database on your machine and surfacing them automatically in future sessions. All data stays on your device; nothing is sent anywhere unless you explicitly enable cloud sync.
 
 ## Key features
 
 <CardGroup cols={2}>
-  <Card icon="magnifying-glass" title="Improved FTS5 Search">
-    OR-expansion and prefix wildcards make natural-language queries work reliably. A query like `bonsai tree plant care` matches any memory containing any of those words, not just entries that contain all four.
+  <Card icon="magnifying-glass" title="FTS5 Full-Text Search">
+    Memories are indexed with SQLite FTS5 and porter stemming so natural-language queries return relevant results quickly — no embeddings or external services required.
   </Card>
   <Card icon="brain" title="Auto-Summarization">
     Every memory gets a 15–20 word summary generated at store time. Summaries let Claude scan what you know before deciding what full content to load.
@@ -42,16 +42,7 @@ Every memory has a `type` that tells Claude how to categorize and use the inform
 
 ## How search works
 
-The upstream `@whenmoon-afk/memory-mcp` passes queries directly to SQLite FTS5. Because FTS5's default operator is AND, a query like `bonsai tree plant care` only returns memories that contain all four words — so a memory about your bonsai hobby would be missed if it happened to say "plant" but not "care."
-
-This fork preprocesses every query before it reaches FTS5:
-
-1. **Multi-word queries** are split and joined with `OR`, so any matching term returns a result. The query `bonsai tree plant care` becomes `bonsai* OR tree* OR plant* OR care*`.
-2. **Prefix wildcards** are appended to each term, so `home` matches `homelab` and `UMass` matches `UMass Global`.
-3. **Quoted phrases** pass through unchanged — `"exact phrase"` still performs an exact FTS5 phrase match.
-4. **Term-match boosting** ranks memories that match more query terms above those that match fewer.
-
-After FTS5 filters candidates, results are re-ranked using a hybrid score:
+When you call `memory_recall`, the query is passed to SQLite FTS5 for full-text matching against stored memory content and summaries. Results are then re-ranked using a hybrid relevance score:
 
 | Signal | Weight |
 |---|---|
@@ -59,6 +50,8 @@ After FTS5 filters candidates, results are re-ranked using a hybrid score:
 | Recency (last accessed) | 30% |
 | Access frequency | 20% |
 | Base score | 10% |
+
+The token-aware response format returns a compact summary index for all matches, then fills the remaining token budget with full content for the highest-ranked results.
 
 ## Database location
 
@@ -81,6 +74,6 @@ To use a different location, set the `MEMORY_DB_PATH` environment variable to an
 | Tool | Description |
 |---|---|
 | [`memory_store`](/memory/tools#memory_store) | Store a new memory or update an existing one. Auto-summarizes content, extracts entities, and calculates importance and TTL. |
-| [`memory_recall`](/memory/tools#memory_recall) | Search memories using full-text search with OR-expansion. Returns a token-aware index plus full details for top matches. |
+| [`memory_recall`](/memory/tools#memory_recall) | Search memories using full-text search. Returns a token-aware index plus full details for top matches. |
 | [`memory_forget`](/memory/tools#memory_forget) | Soft-delete a memory by ID. Removes it from search results while preserving the audit trail. |
 | [`memory_cloud`](/memory/tools#memory_cloud) | Connect to Substratia Cloud, check sync status, or get usage help. Only needed for cross-device sync. |

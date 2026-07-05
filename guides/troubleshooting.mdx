@@ -1,5 +1,5 @@
 ---
-title: "Troubleshoot MCP Tool Issues and Common Errors"
+title: "Troubleshoot Memory MCP, Capacities MCP, and Remote"
 sidebarTitle: "Troubleshooting"
 description: "Resolve common issues with Memory MCP, Capacities MCP, and remote MCP server setup including config errors, search problems, and connection failures."
 ---
@@ -16,15 +16,15 @@ This guide covers the most common issues you may encounter when setting up and u
   1. Open `claude_desktop_config.json` in a text editor and confirm it is valid JSON. Even a single trailing comma or mismatched bracket prevents Claude Desktop from loading any MCP servers.
   2. Verify Node.js 18 or later is installed: run `node --version` in your terminal.
   3. Quit Claude Desktop completely (don't just close the window — use **Quit** from the menu or system tray) and relaunch it.
-  4. Check Claude Desktop's logs for error messages. On macOS, open Console.app and filter by `Claude`. On Windows, look in `%APPDATA%\Claude\logs\`.
+  4. Check Claude Desktop's logs for error messages. On macOS, open Console.app and filter by `Claude`. On Windows, look in `%APPDATA%\\Claude\\logs\\`.
 </Accordion>
 
 <Accordion title="Search returns no results for multi-word queries">
-  Multi-word queries can fail against the default `@whenmoon-afk/memory-mcp` package because it uses AND logic for FTS — all terms must appear together in the same memory. This suite's fork adds OR-expansion and prefix wildcards to address this.
+  The default Memory MCP package uses AND logic for full-text search — all terms must appear together in the same memory entry. If your query contains multiple words, try these steps:
 
-  - Confirm you are running `@whenmoon-afk/memory-mcp` v2.5.0 or later, which includes OR-expansion.
-  - Try shorter, more targeted queries: instead of `"bonsai tree plant care"`, try `"bonsai plant"`.
+  - Break the query into shorter, more targeted terms: instead of `"bonsai tree plant care"`, try `"bonsai plant"`.
   - Run `python memory_search.py --list` to confirm that memories actually exist in the database before assuming search is broken.
+  - If AND logic is consistently causing misses, consider rebuilding the FTS index after re-importing your content using `python import_all_sessions.py --rebuild-fts`.
 </Accordion>
 
 <Accordion title="Memories expire too quickly">
@@ -44,7 +44,7 @@ This guide covers the most common issues you may encounter when setting up and u
   |----------|-------------|
   | macOS | `~/.claude-memories/memory.db` |
   | Linux | `~/.local/share/claude-memories/memory.db` |
-  | Windows | `%APPDATA%\claude-memories\memory.db` |
+  | Windows | `%APPDATA%\\claude-memories\\memory.db` |
 
   If you have set a custom location, export the same value when running Python scripts:
 
@@ -89,7 +89,7 @@ This guide covers the most common issues you may encounter when setting up and u
 </Accordion>
 
 <Accordion title="capacities_read_object_content returns incomplete content">
-  The Capacities API returns search snippets rather than full note bodies for most object types. This is a limitation of the Capacities API itself, not of the MCP server. Use search to locate the notes most relevant to your question — Claude will surface the best-matching snippets from each result.
+  The Capacities API does not expose a public endpoint for retrieving full note bodies by ID. The MCP tool first tries undocumented API endpoints for direct retrieval, then falls back to assembling content from search snippets. This means results may be incomplete. To improve accuracy, always provide the `title` parameter when calling `capacities_read_object_content` — it significantly narrows the search used in the fallback path.
 </Accordion>
 
 </AccordionGroup>

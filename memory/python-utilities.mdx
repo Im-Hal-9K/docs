@@ -33,8 +33,7 @@ Point this script at any directory and it imports every `.md` file it finds as a
 - Scans the target folder for all `.md` files (non-recursive).
 - Parses and strips YAML frontmatter before processing content.
 - Strips markdown formatting (headings, bold, etc.) and generates a descriptive summary by combining heading context with the first sentence of the file.
-- Inserts each file into the `memories` table with type `fact`, importance `0.7`, and metadata `source: markdown-import`.
-- Populates the full-text search (FTS) index automatically.
+- Stores each file as a memory entry with type `fact`, importance `0.7`, and metadata `source: markdown-import`.
 - Skips empty files and reports them as skipped.
 
 **Example:**
@@ -91,7 +90,7 @@ This script imports from Claude Code's local session storage (`~/.claude/project
 | *(none)* | Convert sessions and import all chunks into the database |
 | `--convert-only` | Parse and chunk sessions, print output — no database writes |
 | `--import-only` | Import chunks that were already parsed; skip the conversion step |
-| `--rebuild-fts` | Wipe and rebuild the full-text search index from existing `memories` rows |
+| `--rebuild-fts` | Wipe and rebuild the full-text search index from all stored memories |
 
 ---
 
@@ -112,7 +111,7 @@ Use this script to inspect or clean up the memory database without opening Claud
 python memory_search.py "accessibility audit"
 ```
 
-Runs a case-insensitive full-text search against all active memory content. Results show the summary, a truncated ID, and a 200-character preview of the matching content:
+Runs a case-insensitive substring search against all active memory content. Results show the summary, a truncated ID, and a preview of the matching content:
 
 ```
 Found 3 result(s) for 'accessibility audit':

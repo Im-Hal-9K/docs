@@ -1,10 +1,14 @@
 ---
 title: "Deploy a Remote MCP Server to Cloudflare Workers"
 sidebarTitle: "Deploy"
-description: "Deploy the authless remote MCP server template to Cloudflare Workers in minutes using Wrangler or the one-click deploy button."
+description: "Deploy the authless remote MCP server template to Cloudflare Workers in minutes using the Wrangler CLI or the one-click deploy button."
 ---
 
 You can have a publicly accessible MCP server running on Cloudflare Workers in minutes. Choose between the one-click deploy button for the fastest path or the Wrangler CLI for full local control. Either way, your server ends up at a stable `workers.dev` URL that any MCP-compatible client can reach.
+
+<Warning>
+  This template has no authentication. Anyone with your Worker URL can call your tools. Do not expose sensitive data or operations through this server.
+</Warning>
 
 ## Prerequisites
 
@@ -20,23 +24,23 @@ npm install -g wrangler
 
 ## Option A: One-click deploy
 
-Click the **Deploy to Workers** button in the [repository README](https://github.com/Im-Hal-9K/remote-mcp-server-authless) to launch Cloudflare's one-click deploy flow. Cloudflare forks the repository to your account, configures the Worker and Durable Object bindings automatically, and deploys — no local tooling required.
+Click the **Deploy to Workers** button on the [template page](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/ai/tree/main/demos/remote-mcp-authless) to launch Cloudflare's one-click deploy flow. Cloudflare forks the repository to your account, configures the Worker automatically, and deploys — no local tooling required.
 
 ## Option B: Wrangler CLI deploy
 
 <Steps>
-  <Step title="Clone or scaffold the project">
-    Scaffold a new project directly from the template with a single command:
+  <Step title="Scaffold the project">
+    Create a new project from the template with a single command:
 
     ```bash
-    npm create cloudflare@latest my-mcp-server -- --template Im-Hal-9K/remote-mcp-server-authless
+    npm create cloudflare@latest -- my-mcp-server --template=cloudflare/ai/demos/remote-mcp-authless
     ```
 
     Or clone the repository manually:
 
     ```bash
-    git clone https://github.com/Im-Hal-9K/remote-mcp-server-authless
-    cd remote-mcp-server-authless
+    git clone https://github.com/cloudflare/ai
+    cd ai/demos/remote-mcp-authless
     npm install
     ```
   </Step>
@@ -58,7 +62,7 @@ Click the **Deploy to Workers** button in the [repository README](https://github
     npm run deploy
     ```
 
-    Wrangler compiles your TypeScript, creates the Durable Object namespace, and deploys everything to Cloudflare's edge network.
+    Wrangler compiles your TypeScript and deploys everything to Cloudflare's edge network.
   </Step>
 
   <Step title="Confirm your server is live">

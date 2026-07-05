@@ -1,7 +1,7 @@
 ---
-title: "Import Your Markdown Notes into Claude's Memory"
+title: "Bulk Import Your Markdown Notes into Claude's Memory"
 sidebarTitle: "Import Markdown"
-description: "Bulk-import a folder of markdown files into the Memory MCP database so Claude can recall your notes across sessions."
+description: "Bulk-import a folder of markdown files into the Memory MCP database so Claude can recall your notes across every future conversation."
 ---
 
 If you have existing notes, wikis, or documentation in markdown, you can bulk-import them so Claude can recall their content across every future conversation. The `import_to_memory.py` script reads your `.md` files, strips formatting, generates summaries, and writes each file as a searchable memory entry — all in seconds.
@@ -30,13 +30,22 @@ curl -O https://raw.githubusercontent.com/Im-Hal-9K/claude-memory-tools/main/imp
     python import_to_memory.py /path/to/your/notes
     ```
 
-    The script prints each filename as it processes it, then shows a final count of imported and skipped files.
+    The script prints each filename as it processes it, then shows a final count of imported and skipped files. Output looks like:
+
+    ```
+    Database: /Users/you/.claude-memories/memory.db
+    Found 12 markdown files to import.
+      + project-overview.md
+      + meeting-notes.md
+      - empty-draft.md (empty, skipped)
+    
+    Done: 11 imported, 1 skipped.
+    ```
   </Step>
 
   <Step title="Understand what the script does">
     For every `.md` file in the folder (non-recursive — it does not descend into subdirectories), the script:
 
-    - Parses YAML frontmatter for metadata such as `title`
     - Strips markdown formatting (headings, bold, etc.) to produce clean plain text
     - Generates a summary from the document's headings and first sentence
     - Inserts the file as a memory entry with `source: markdown-import` and an importance score of `0.7`
@@ -55,14 +64,13 @@ curl -O https://raw.githubusercontent.com/Im-Hal-9K/claude-memory-tools/main/imp
 
 ## What gets imported
 
-Each file becomes one memory entry. The script preserves the following:
+Each file becomes one memory entry. The script stores the following:
 
 | Field | Source |
 |-------|--------|
-| **Title** | `title` key in YAML frontmatter, or the filename if no frontmatter is present |
 | **Content** | Full plain text of the file with markdown formatting stripped |
 | **Summary** | Auto-generated from headings and the first sentence |
-| **Source metadata** | `source: markdown-import` and the original filename — stored in the `metadata` column |
+| **Source metadata** | `source: markdown-import` and the original filename |
 
 <Tip>
   For large note collections (hundreds of files), run the import in batches by subdirectory rather than pointing the script at a single top-level folder. Because the script scans non-recursively, you control exactly which subset of notes to import in each pass. Each file becomes one memory entry, so batching keeps individual runs manageable.
@@ -70,7 +78,7 @@ Each file becomes one memory entry. The script preserves the following:
 
 ## Re-importing
 
-The script does **not** deduplicate by filename for markdown imports. If you run it twice on the same folder, you will get duplicate entries in the database. Before re-running, check what is already stored:
+The script does **not** deduplicate by filename. If you run it twice on the same folder, you will get duplicate entries in the database. Before re-running, check what is already stored:
 
 ```bash
 python memory_search.py --list

@@ -9,7 +9,7 @@ You can add Memory MCP to Claude Desktop in two ways: run the auto-installer and
 ## Requirements
 
 - Node.js 18 or later (`node --version` to check)
-- Claude Desktop (for Desktop installation) or Claude Code (for plugin installation)
+- Claude Desktop or Claude Code
 
 ## Method 1: Auto-installer
 
@@ -18,7 +18,7 @@ You can add Memory MCP to Claude Desktop in two ways: run the auto-installer and
     Open a terminal and run:
 
     ```bash
-    npx @whenmoon-afk/memory-mcp install
+    npx memory-mcp-install
     ```
 
     The installer detects your operating system, locates your Claude Desktop config file, creates a backup of the existing config, and injects the Memory MCP server entry automatically. It also creates the database directory if it doesn't exist yet.
@@ -77,23 +77,31 @@ After saving the file, restart Claude Desktop.
 
 ## Claude Code installation
 
-Claude Code users install Memory MCP as a plugin rather than editing a JSON config file directly:
+Claude Code reads MCP server configuration from `~/.claude/.mcp.json`. Add the `memory` server block to that file to enable Memory MCP in Claude Code sessions:
 
-```bash
-claude plugin install github:whenmoon-afk/claude-memory-mcp
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@whenmoon-afk/memory-mcp"]
+    }
+  }
+}
 ```
 
-The plugin's `.claude-plugin/plugin.json` manifest auto-registers two lifecycle hooks and a set of slash commands:
+If the file doesn't exist yet, create it at `~/.claude/.mcp.json` with the content above.
+
+After saving, start a new Claude Code session. The memory tools will be available automatically.
+
+### Lifecycle hooks
+
+The package ships with Claude Code lifecycle hooks that fire automatically each session:
 
 - **`SessionStart` hook** — fires at session startup with a prompt reminding Claude to use `memory_recall` to search past learnings, decisions, and preferences.
 - **`Stop` hook** — fires before a session ends, prompting Claude to use `memory_store` to save any important decisions, preferences, or solutions from the session.
 
-**Slash commands** available in Claude Code after installation:
-
-| Command | Description |
-|---|---|
-| `/memory:connect [api_key]` | Connect to Substratia Cloud for cross-device sync. Run without an argument for setup instructions. |
-| `/memory:status` | Show total memories stored, cloud sync status, and recent activity. |
+To activate these hooks, copy the `.claude-plugin/hooks/` directory from the [GitHub repository](https://github.com/WhenMoon-afk/claude-memory-mcp) into your project's `.claude/` folder, or reference the hooks path in your Claude Code settings.
 
 ## Desktop Extension
 

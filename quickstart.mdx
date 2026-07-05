@@ -1,8 +1,10 @@
 ---
-title: "Get Started with Chaos Navigation MCP Tools"
+title: "Install Memory MCP and Connect It to Claude"
 sidebarTitle: "Quickstart"
-description: "Install the Memory MCP server and connect it to Claude Desktop or Claude Code in under five minutes."
+description: "Install the Memory MCP server, add it to your Claude Desktop or Claude Code config, and store your first memory — all in under five minutes."
 ---
+
+The fastest path to persistent memory in Claude is the auto-installer, which locates your config file and adds the server entry for you. If you prefer to configure things by hand, the manual steps are just as quick.
 
 <Steps>
   <Step title="Prerequisites">
@@ -19,7 +21,7 @@ description: "Install the Memory MCP server and connect it to Claude Desktop or 
     The fastest way to get started is the auto-installer. Run this command in your terminal:
 
     ```bash
-    npx @whenmoon-afk/memory-mcp install
+    npx --package @whenmoon-afk/memory-mcp memory-mcp-install
     ```
 
     The auto-installer locates your `claude_desktop_config.json` file, adds the `memory` server entry automatically, and confirms when it is done. You can skip straight to step 4.
@@ -50,10 +52,25 @@ description: "Install the Memory MCP server and connect it to Claude Desktop or 
     | OS | Path |
     |----|------|
     | macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-    | Linux | `~/.config/claude/claude_desktop_config.json` |
+    | Linux | `~/.config/Claude/claude_desktop_config.json` |
     | Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
 
     If the file does not exist yet, create it with the JSON block above as its entire contents.
+
+    <Note>
+      **Windows users:** If Claude Desktop reports a "Connection closed" error, wrap the command with `cmd /c`:
+
+      ```json
+      {
+        "mcpServers": {
+          "memory": {
+            "command": "cmd",
+            "args": ["/c", "npx", "-y", "@whenmoon-afk/memory-mcp"]
+          }
+        }
+      }
+      ```
+    </Note>
   </Step>
 
   <Step title="Restart Claude Desktop">
@@ -72,6 +89,15 @@ description: "Install the Memory MCP server and connect it to Claude Desktop or 
     Claude calls `memory_recall`, searches the local database, and surfaces everything it has stored about you — including the preference you just saved. The memory persists across all future sessions automatically.
   </Step>
 </Steps>
+
+## Claude Code slash commands
+
+If you use Claude Code, the Memory MCP server also registers two slash commands you can run directly from the chat input:
+
+| Command | Description |
+|---------|-------------|
+| `/memory:connect` | Connect to Substratia Cloud for backup and cross-device sync. Run with your API key: `/memory:connect YOUR_API_KEY` |
+| `/memory:status` | Show current memory database stats and cloud sync status. |
 
 ## Next steps
 

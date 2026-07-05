@@ -1,7 +1,7 @@
 ---
 title: "Add Custom Tools to Your Remote MCP Server"
 sidebarTitle: "Custom Tools"
-description: "Replace or extend the example tools in your remote MCP server by adding tool definitions in src/index.ts using the MCP SDK."
+description: "Replace or extend the example tools in your remote MCP server by adding your own tool definitions inside src/index.ts using the MCP SDK and Zod."
 ---
 
 The template ships with two calculator tools — `add` and `calculate` — to give you a working server out of the box. You replace or extend them by editing `src/index.ts`. You don't need to touch any other file to add new tools.
@@ -19,8 +19,8 @@ All tool logic lives in **`src/index.ts`**. The `init()` method inside the `MyMC
 Here is the full structure of the file, including the `add` tool as a representative example:
 
 ```typescript src/index.ts
-import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpAgent } from "agents/mcp";
 import { z } from "zod";
 
 export class MyMCP extends McpAgent {

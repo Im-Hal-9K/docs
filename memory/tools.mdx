@@ -1,7 +1,7 @@
 ---
-title: "Memory MCP Tools: Store, Recall, Forget, and Sync"
+title: "Memory MCP Tools: Store, Recall, Forget, and Cloud Sync"
 sidebarTitle: "MCP Tools"
-description: "Reference for all four Memory MCP tools: memory_store, memory_recall, memory_forget, and memory_cloud — invoked automatically by Claude."
+description: "All four Memory MCP tools documented: memory_store, memory_recall, memory_forget, and memory_cloud — with parameter names, types, and return shapes."
 ---
 
 The Memory MCP server exposes four tools over the MCP stdio protocol: `memory_store`, `memory_recall`, `memory_forget`, and `memory_cloud`. Claude calls these tools automatically as it works — storing what it learns, searching what it knows, and cleaning up what's no longer relevant. You can also prompt Claude to use any of them directly when you need explicit control over your memory store.
@@ -69,7 +69,7 @@ The tool auto-extracts named entities from `content`, generates a summary, and c
 | `type` | string | The memory type |
 | `summary` | string | Auto-generated one-line summary |
 | `content` | string | The normalized content |
-| `entities` | string[] | Extracted or provided entity names |
+| `entities` | string[] | Extracted or provided entity names (omitted when none are linked) |
 | `importance` | number | The calculated or provided importance score |
 | `created_at` | string | ISO timestamp of creation |
 | `last_accessed` | string | ISO timestamp of last access |
@@ -113,7 +113,7 @@ The tool uses a two-phase response: first it builds a compact **index** of all m
 | Field | Type | Description |
 |---|---|---|
 | `index` | `MinimalMemory[]` | Compact summaries (`id`, `type`, `summary`, `importance`) for **all** matched memories |
-| `details` | `FullMemory[]` | Full content for the top matches that fit within `max_tokens` |
+| `details` | `FormattedMemory[]` | Standard-detail objects for the top matches that fit within `max_tokens` |
 | `total_count` | number | Total number of matching memories |
 | `has_more` | boolean | `true` if more results exist beyond the `limit` |
 | `tokens_used` | number | Actual tokens consumed by the response |

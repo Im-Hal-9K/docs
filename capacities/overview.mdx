@@ -1,7 +1,7 @@
 ---
 title: "Capacities MCP: Bring Your Knowledge Base to Claude"
 sidebarTitle: "Overview"
-description: "Capacities MCP connects Claude to your Capacities PKM workspace, letting you search notes, save weblinks, and write to your daily note via natural language."
+description: "Capacities MCP connects Claude to your Capacities workspace, letting you search notes, save weblinks, and write to your daily note via natural language."
 ---
 
 [Capacities](https://capacities.io) is a personal knowledge management app that lets you capture notes, bookmarks, and ideas in structured, interconnected spaces. The Capacities MCP server bridges Claude directly to your Capacities workspace, so you can search your notes, retrieve object content, save weblinks with tags, and append to your daily note — all through natural conversation, without switching apps.
@@ -36,7 +36,7 @@ The Capacities API enforces the following rate limits per endpoint. Claude will 
 |---|---|
 | `GET /spaces` | 5 requests / 60 seconds |
 | `GET /space-info` | 5 requests / 60 seconds |
-| `POST /lookup` (search) | 120 requests / 60 seconds |
+| `POST /lookup` | 120 requests / 60 seconds |
 | `POST /save-weblink` | 10 requests / 60 seconds |
 | `POST /save-to-daily-note` | 5 requests / 60 seconds |
 

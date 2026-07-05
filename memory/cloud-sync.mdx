@@ -1,7 +1,7 @@
 ---
-title: "Substratia Cloud Sync for Memory MCP"
+title: "Memory MCP Cloud Sync: Connect, Monitor, and Troubleshoot"
 sidebarTitle: "Cloud Sync"
-description: "Sync your Claude memories to Substratia Cloud for cross-device access. Connect with an API key and monitor sync status."
+description: "Sync Claude memories to Substratia Cloud for cross-device access. Connect with an API key and the background sync manager handles retries automatically."
 ---
 
 By default, every memory the Memory MCP server stores lives entirely on your local machine — in a SQLite database scoped to your device. You never need to configure cloud sync to use memory features. Substratia Cloud is an optional add-on that replicates your local memory database to Substratia's hosted service, making your memories available across all your devices and Claude clients. Once connected, sync runs automatically in the background with no further action required.
@@ -55,7 +55,7 @@ You can also provide your API key through your MCP server configuration instead 
 }
 ```
 
-The server reads this variable at startup and activates cloud sync automatically — no conversation step needed. This approach works well for CI environments or shared machines where interactive setup isn't practical.
+The server reads this variable at startup and activates cloud sync automatically — no conversation step needed. This approach works well for machines where interactive setup isn't practical.
 
 ---
 

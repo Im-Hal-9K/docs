@@ -39,7 +39,7 @@ Returns the structure and collection schema for a specific space, including prop
 
 ## `capacities_search`
 
-Searches for content across one or more spaces. Uses the `/lookup` endpoint (title-based, faster) with automatic fallback to the legacy `/search` endpoint if needed.
+Searches for content across one or more spaces. Supports both full-text and title-based search modes. Uses the `/lookup` endpoint with automatic fallback to the legacy `/search` endpoint if needed.
 
 **Parameters**
 
@@ -57,7 +57,7 @@ Searches for content across one or more spaces. Uses the `/lookup` endpoint (tit
 
 ## `capacities_read_object_content`
 
-Retrieves the content of a Capacities object by its ID. Because the Capacities API returns search snippets rather than full note bodies, this tool uses a multi-strategy cascade: fullText lookup via `/lookup` → title lookup via `/lookup` → legacy `/search` fallback. Providing `title` significantly improves matching accuracy.
+Retrieves the content of a Capacities object by its ID. Because the Capacities API returns search snippets rather than full note bodies, this tool uses a multi-strategy cascade: fullText search via `/lookup` → title search via `/lookup` → legacy `/search` fallback. Providing `title` significantly improves matching accuracy.
 
 **Parameters**
 
