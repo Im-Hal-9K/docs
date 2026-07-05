@@ -1,47 +1,93 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Chaos Navigation MCP Tools"
+sidebarTitle: "Quickstart"
+description: "Install the Memory MCP server and connect it to Claude Desktop or Claude Code in under five minutes."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
-
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Prerequisites">
+    Before you begin, make sure you have the following installed:
+
+    - **Node.js 18+** and **npm** — required to run the Memory MCP server via `npx`
+    - **Python 3.x** — required only if you plan to use the Python CLI utilities
+    - **Claude Desktop** or **Claude Code** — the MCP servers integrate with either client
+
+    You do not need a cloud account or any API keys to use the local MCP servers.
+  </Step>
+
+  <Step title="Install Memory MCP">
+    The fastest way to get started is the auto-installer. Run this command in your terminal:
 
     ```bash
-    npm install your-package
+    npx @whenmoon-afk/memory-mcp install
+    ```
+
+    The auto-installer locates your `claude_desktop_config.json` file, adds the `memory` server entry automatically, and confirms when it is done. You can skip straight to step 4.
+
+    Alternatively, you can run the server directly to verify it works before configuring Claude:
+
+    ```bash
+    npx @whenmoon-afk/memory-mcp
     ```
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
 
-    ```bash
-    your-cli init
+  <Step title="Manual Claude Desktop configuration">
+    If you prefer to configure Claude Desktop by hand, open your `claude_desktop_config.json` file and add the `memory` entry under `mcpServers`:
+
+    ```json
+    {
+      "mcpServers": {
+        "memory": {
+          "command": "npx",
+          "args": ["-y", "@whenmoon-afk/memory-mcp"]
+        }
+      }
+    }
     ```
+
+    The config file lives in a different location depending on your operating system:
+
+    | OS | Path |
+    |----|------|
+    | macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+    | Linux | `~/.config/claude/claude_desktop_config.json` |
+    | Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+
+    If the file does not exist yet, create it with the JSON block above as its entire contents.
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
 
-    ```bash
-    your-cli start
-    ```
+  <Step title="Restart Claude Desktop">
+    Save the config file and fully quit Claude Desktop — use **File → Quit** (or ⌘Q on macOS) rather than just closing the window. When you relaunch it, Claude Desktop reads the config and starts the Memory MCP server automatically in the background. You will see the memory tools available in the tool picker once the server is running.
+  </Step>
+
+  <Step title="Test it">
+    Open a new conversation in Claude Desktop and ask Claude to store a memory:
+
+    > "Remember that my preferred coding language is TypeScript."
+
+    Claude calls the `memory_store` tool and confirms the memory was saved. Then ask it to recall:
+
+    > "What do you remember about my preferences?"
+
+    Claude calls `memory_recall`, searches the local database, and surfaces everything it has stored about you — including the preference you just saved. The memory persists across all future sessions automatically.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Next steps
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+Now that Claude has persistent memory, explore the rest of the suite:
+
+<CardGroup cols={2}>
+  <Card title="Memory Tools" icon="wrench" href="/memory/tools">
+    Explore all four MCP tools the Memory server exposes to Claude.
+  </Card>
+  <Card title="Configuration" icon="gear" href="/memory/configuration">
+    Customize memory behavior — TTL, importance scoring, cloud sync, and more.
+  </Card>
+  <Card title="Python Utilities" icon="terminal" href="/memory/python-utilities">
+    Import markdown folders, Claude Code sessions, and export chat logs from the CLI.
+  </Card>
+  <Card title="Capacities MCP" icon="database" href="/capacities/overview">
+    Connect Claude to your Capacities PKM workspace for richer knowledge integration.
+  </Card>
+</CardGroup>

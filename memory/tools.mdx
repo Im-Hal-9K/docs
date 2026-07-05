@@ -1,0 +1,203 @@
+---
+title: "Memory MCP Tools: Store, Recall, Forget, and Sync"
+sidebarTitle: "MCP Tools"
+description: "Reference for all four Memory MCP tools: memory_store, memory_recall, memory_forget, and memory_cloud — invoked automatically by Claude."
+---
+
+The Memory MCP server exposes four tools over the MCP stdio protocol: `memory_store`, `memory_recall`, `memory_forget`, and `memory_cloud`. Claude calls these tools automatically as it works — storing what it learns, searching what it knows, and cleaning up what's no longer relevant. You can also prompt Claude to use any of them directly when you need explicit control over your memory store.
+
+---
+
+## memory_store
+
+Stores a new memory or updates an existing one. Claude calls this automatically when it encounters information worth persisting — a preference you mention, a project detail, or a relationship between concepts. Pass an `id` to update an existing memory; omit it to create a new one.
+
+The tool auto-extracts named entities from `content`, generates a summary, and calculates both an importance score and a time-to-live — so most parameters are optional.
+
+<ParamField body="content" type="string" required>
+  The information to store. Claude normalizes and summarizes this automatically.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  The memory type. One of:
+  - `fact` — a discrete piece of information
+  - `entity` — a person, place, or thing
+  - `relationship` — a connection between two or more entities
+  - `self` — a user preference or personal detail
+</ParamField>
+
+<ParamField body="id" type="string">
+  The ID of an existing memory to update. Omit this field to create a new memory.
+</ParamField>
+
+<ParamField body="importance" type="number">
+  An importance score from `0` to `10`. If you omit this, the server calculates it automatically based on content, type, and entity signals.
+</ParamField>
+
+<ParamField body="entities" type="string[]">
+  An array of named entity strings to associate with this memory (e.g. `["Project Alpha", "React"]`). If you omit this, entities are extracted automatically from `content`.
+</ParamField>
+
+<ParamField body="tags" type="string[]">
+  Custom tags for organization and later filtering (e.g. `["work", "frontend"]`). Tags are stored in the memory's metadata.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Arbitrary key-value pairs stored alongside the memory. Useful for carrying structured context that doesn't fit the standard fields. On updates, the new metadata is merged into the existing object.
+</ParamField>
+
+<ParamField body="ttl_days" type="number">
+  How many days to keep this memory before it expires. Pass `null` to make the memory permanent. If omitted, TTL is calculated automatically from the importance score.
+</ParamField>
+
+<ParamField body="expires_at" type="string">
+  An explicit expiration timestamp in ISO 8601 format (e.g. `"2025-12-31T00:00:00Z"`). Takes precedence over `ttl_days` when both are provided.
+</ParamField>
+
+<ParamField body="provenance" type="object">
+  Source information recorded in the audit trail. Accepted fields:
+  - `source` (string) — where this memory came from
+  - `context` (string, optional) — additional context about the source
+  - `user_id` (string, optional) — the user associated with this memory
+</ParamField>
+
+**Returns:** A `StandardMemory` object with the following fields:
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | string | The memory's unique identifier |
+| `type` | string | The memory type |
+| `summary` | string | Auto-generated one-line summary |
+| `content` | string | The normalized content |
+| `entities` | string[] | Extracted or provided entity names |
+| `importance` | number | The calculated or provided importance score |
+| `created_at` | string | ISO timestamp of creation |
+| `last_accessed` | string | ISO timestamp of last access |
+
+**Example prompts:**
+
+- "Remember that my preferred IDE is VS Code with Vim keybindings."
+- "Store the fact that Project Alpha uses React 18 and TypeScript."
+- "Update memory `mem_abc123` — the project deadline moved to March 15."
+
+---
+
+## memory_recall
+
+Searches your memories using full-text search with OR-expansion and hybrid relevance scoring. Claude calls this automatically at the start of a session to pre-load relevant context.
+
+The tool uses a two-phase response: first it builds a compact **index** of all matched memories (id, type, summary, importance), then it fills the remaining token budget with **full content** for the top matches. This lets Claude see what exists before deciding what to load in detail.
+
+<ParamField body="query" type="string" required>
+  A natural language search query (e.g. `"coding preferences"` or `"Project Alpha dependencies"`). The search engine expands single-word queries with OR logic to broaden recall.
+</ParamField>
+
+<ParamField body="max_tokens" type="number">
+  Token budget for the response. Defaults to `1000`. Range: `100`–`5000`. The server allocates tokens to summaries first, then fills remaining space with full memory content for top matches.
+</ParamField>
+
+<ParamField body="type" type="string">
+  Filter results to a specific memory type: `fact`, `entity`, `relationship`, or `self`.
+</ParamField>
+
+<ParamField body="entities" type="string[]">
+  Filter results to memories linked to specific entity names (e.g. `["Project Alpha"]`).
+</ParamField>
+
+<ParamField body="limit" type="number">
+  Maximum number of memories to return. Defaults to `20`, maximum `50`.
+</ParamField>
+
+**Returns:** A `RecallResponse` object:
+
+| Field | Type | Description |
+|---|---|---|
+| `index` | `MinimalMemory[]` | Compact summaries (`id`, `type`, `summary`, `importance`) for **all** matched memories |
+| `details` | `FullMemory[]` | Full content for the top matches that fit within `max_tokens` |
+| `total_count` | number | Total number of matching memories |
+| `has_more` | boolean | `true` if more results exist beyond the `limit` |
+| `tokens_used` | number | Actual tokens consumed by the response |
+| `query` | string | The original query string |
+
+**Example prompts:**
+
+- "What do you remember about my coding preferences?"
+- "Recall everything you know about Project Alpha."
+- "Search your memories for anything related to database configuration, limit to facts only."
+
+---
+
+## memory_forget
+
+Soft-deletes a memory by ID. The memory is marked as deleted and excluded from future searches, but its record and audit trail are preserved. You can use this to correct outdated information or remove something Claude stored in error.
+
+<ParamField body="id" type="string" required>
+  The unique ID of the memory to delete. You can find memory IDs in the `id` field of any `memory_recall` or `memory_store` response.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  A human-readable reason for the deletion. This is stored in the audit trail alongside the provenance record. Defaults to `"User requested deletion"`.
+</ParamField>
+
+**Returns:** A `ForgetResponse` object:
+
+| Field | Type | Description |
+|---|---|---|
+| `success` | boolean | `true` when the memory was deleted successfully |
+| `memory_id` | string | The ID of the deleted memory |
+| `message` | string | Confirmation message including the reason |
+
+**Example prompts:**
+
+- "Forget the memory about my old email address."
+- "Delete the fact about Project Beta — it's no longer relevant."
+- "Remove memory `mem_abc123`."
+
+---
+
+## memory_cloud
+
+Manages your connection to Substratia Cloud for cross-device memory sync. Requires a Substratia Pro API key. All memories remain local unless you explicitly connect; this tool is only needed when you want to enable or monitor cloud sync.
+
+<ParamField body="action" type="string" required>
+  The operation to perform. One of:
+  - `connect` — save your API key and verify the connection
+  - `status` — show connection health, sync queue counts, and last sync time
+  - `help` — return usage instructions and current cloud sync status
+</ParamField>
+
+<ParamField body="api_key" type="string">
+  Your Substratia API key (must start with `sk_`). Only used with the `connect` action. The key is saved to `~/.config/substratia/credentials.json` and shared with other Substratia tools.
+</ParamField>
+
+**Action details:**
+
+- **`connect`** — Validates the `sk_` prefix, saves the key to disk, and verifies connectivity against the Substratia Cloud health endpoint. If the service is temporarily unreachable, the key is still saved and sync will begin when the service is available.
+- **`status`** — Returns the connection status, API URL, config file path, and sync queue statistics: pending count, synced count, failed count, last sync time, and the last error (if any).
+- **`help`** — Returns a usage summary and shows whether cloud sync is currently enabled.
+
+**Claude Code slash commands:**
+
+You can also manage cloud sync directly in Claude Code without invoking the tool through conversation:
+
+| Command | Description |
+|---|---|
+| `/memory:connect [api_key]` | Connect to Substratia Cloud using the provided API key |
+| `/memory:status` | Show memory database info and current cloud sync status |
+
+**Example prompts:**
+
+- "Connect my memory to Substratia Cloud with API key sk_abc123..."
+- "What is my current memory cloud sync status?"
+- "Show memory cloud help."
+
+---
+
+## How Claude uses these tools
+
+When you enable Claude Code hooks, the memory tools run automatically at defined points in your session:
+
+- **Session start** — `memory_recall` fires automatically with a context query based on your current task. Claude uses the results to pre-load relevant facts, preferences, and project details before it writes its first response.
+- **Session end** — Claude is prompted to call `memory_store` for anything significant it learned during the session — new preferences, project decisions, or updated facts.
+
+Between those bookends, Claude calls `memory_store` any time you share something it judges worth keeping, and calls `memory_recall` mid-session when it needs to look something up. You can always prompt Claude explicitly to recall, store, or forget specific memories if you want manual control.

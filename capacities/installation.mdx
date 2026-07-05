@@ -1,0 +1,77 @@
+---
+title: "Install Capacities MCP for Claude Desktop"
+sidebarTitle: "Installation"
+description: "Add Capacities MCP Plus to Claude Desktop with your Capacities API key to connect Claude to your personal knowledge base."
+---
+
+To use the Capacities MCP server you need a [Capacities](https://capacities.io) account with at least one space, a Capacities API key, Node.js 18 or later installed on your machine, and Claude Desktop.
+
+## Get your Capacities API key
+
+Open Capacities, go to **Settings → API**, and create a new API key. Copy it — you'll paste it into the Claude Desktop config in the next step.
+
+## Add to Claude Desktop config
+
+<Steps>
+  <Step title="Open claude_desktop_config.json">
+    Locate the Claude Desktop configuration file for your operating system:
+
+    - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+    - **Linux:** `~/.config/claude/claude_desktop_config.json`
+    - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+    Create the file if it doesn't already exist.
+  </Step>
+
+  <Step title="Add the server configuration">
+    Add the following JSON to your config file. If you already have other MCP servers listed under `mcpServers`, add the `"capacities"` block alongside them.
+
+    ```json
+    {
+      "mcpServers": {
+        "capacities": {
+          "command": "npx",
+          "args": ["-y", "capacities-mcp-plus"],
+          "env": {
+            "CAPACITIES_API_KEY": "your_api_key_here"
+          }
+        }
+      }
+    }
+    ```
+
+    Replace `your_api_key_here` with the API key you copied from Capacities Settings.
+  </Step>
+
+  <Step title="Restart Claude Desktop">
+    Quit Claude Desktop completely and relaunch it. On first start, `npx` downloads and runs `capacities-mcp-plus` automatically — no separate install step is needed.
+  </Step>
+
+  <Step title="Verify the connection">
+    In a new Claude conversation, ask:
+
+    > "List my Capacities spaces."
+
+    Claude should respond with a list of your spaces and their IDs. If it does, the server is connected and ready to use.
+  </Step>
+</Steps>
+
+## Windows-specific configuration
+
+On Windows, Claude Desktop requires a `cmd` wrapper to launch `npx` correctly. Use this config instead of the standard one above:
+
+```json
+{
+  "mcpServers": {
+    "capacities": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "capacities-mcp-plus"],
+      "env": {
+        "CAPACITIES_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+Everything else — API key placement, restart, and verification — works the same as on macOS and Linux.

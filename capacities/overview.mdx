@@ -1,0 +1,47 @@
+---
+title: "Capacities MCP: Bring Your Knowledge Base to Claude"
+sidebarTitle: "Overview"
+description: "Capacities MCP connects Claude to your Capacities PKM workspace, letting you search notes, save weblinks, and write to your daily note via natural language."
+---
+
+[Capacities](https://capacities.io) is a personal knowledge management app that lets you capture notes, bookmarks, and ideas in structured, interconnected spaces. The Capacities MCP server bridges Claude directly to your Capacities workspace, so you can search your notes, retrieve object content, save weblinks with tags, and append to your daily note — all through natural conversation, without switching apps.
+
+This server is published as **`capacities-mcp-plus`** on npm, an enhanced fork of [jemgold/capacities-mcp](https://github.com/jemgold/capacities-mcp) that adds object content retrieval, improved Windows support, and an updated MCP SDK.
+
+## What you can do
+
+<CardGroup cols={2}>
+  <Card title="Search Your Notes" icon="magnifying-glass">
+    Run full-text or title-based searches across one or more of your spaces to find exactly the notes you need.
+  </Card>
+  <Card title="Read Objects" icon="book-open">
+    Retrieve the content of any note or object by its ID using a multi-strategy lookup cascade.
+  </Card>
+  <Card title="Save Weblinks" icon="link">
+    Bookmark any URL directly into a Capacities space, complete with custom titles, descriptions, tags, and markdown notes.
+  </Card>
+  <Card title="Daily Notes" icon="calendar">
+    Append markdown content to today's daily note in any of your spaces, with optional timestamp control.
+  </Card>
+  <Card title="Browse Spaces" icon="list">
+    List all your spaces and inspect their full structure schemas — or get a lightweight summary to save context.
+  </Card>
+</CardGroup>
+
+## Rate limits
+
+The Capacities API enforces the following rate limits per endpoint. Claude will surface an error if you exceed them.
+
+| Endpoint | Limit |
+|---|---|
+| `GET /spaces` | 5 requests / 60 seconds |
+| `GET /space-info` | 5 requests / 60 seconds |
+| `POST /lookup` (search) | 120 requests / 60 seconds |
+| `POST /save-weblink` | 10 requests / 60 seconds |
+| `POST /save-to-daily-note` | 5 requests / 60 seconds |
+
+## Next steps
+
+<Note>
+  Ready to connect Claude to Capacities? Head to [Installation](/capacities/installation) to add the server to Claude Desktop in minutes, then visit [MCP Tools](/capacities/tools) for a full reference of every tool and its parameters.
+</Note>

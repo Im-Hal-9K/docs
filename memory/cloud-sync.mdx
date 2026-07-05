@@ -1,0 +1,117 @@
+---
+title: "Substratia Cloud Sync for Memory MCP"
+sidebarTitle: "Cloud Sync"
+description: "Sync your Claude memories to Substratia Cloud for cross-device access. Connect with an API key and monitor sync status."
+---
+
+By default, every memory the Memory MCP server stores lives entirely on your local machine — in a SQLite database scoped to your device. You never need to configure cloud sync to use memory features. Substratia Cloud is an optional add-on that replicates your local memory database to Substratia's hosted service, making your memories available across all your devices and Claude clients. Once connected, sync runs automatically in the background with no further action required.
+
+---
+
+## Getting an API key
+
+Cloud sync requires a **Substratia Pro** API key. To get one:
+
+1. Go to [substratia.io/dashboard](https://substratia.io/dashboard).
+2. Sign in to your Substratia Pro account.
+3. Click **Connect Claude Code** to generate a new API key.
+
+All Substratia API keys start with `sk_`. Keep your key private — it authenticates your memory sync and grants write access to your cloud memory store.
+
+---
+
+## Connecting via Claude
+
+The simplest way to connect is to ask Claude directly in any conversation:
+
+> "Connect my memory to Substratia Cloud with API key sk_your_key_here."
+
+Claude calls `memory_cloud` with `action: connect` and your key. The server:
+
+1. Validates that the key starts with `sk_`.
+2. Saves the key to `~/.config/substratia/credentials.json`.
+3. Verifies connectivity against the Substratia Cloud health endpoint.
+4. Confirms the connection (or warns you if the service is temporarily unreachable, while still saving your key for when it comes back online).
+
+The credentials file is shared across Substratia tools — if you've already connected another Substratia product, your memory sync uses the same key automatically.
+
+---
+
+## Connecting via environment variable
+
+You can also provide your API key through your MCP server configuration instead of through conversation. Set `SUBSTRATIA_API_KEY` in the `env` block of your MCP config:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@whenmoon-afk/memory-mcp"],
+      "env": {
+        "SUBSTRATIA_API_KEY": "sk_your_key_here"
+      }
+    }
+  }
+}
+```
+
+The server reads this variable at startup and activates cloud sync automatically — no conversation step needed. This approach works well for CI environments or shared machines where interactive setup isn't practical.
+
+---
+
+## Checking sync status
+
+To see your current connection state, ask Claude:
+
+> "What is my memory sync status?"
+
+Or run the Claude Code slash command:
+
+```
+/memory:status
+```
+
+Either way, Claude calls `memory_cloud` with `action: status` and returns a status report that includes:
+
+| Field | Description |
+|---|---|
+| **Connection status** | `Connected` or `Unavailable (reason)` |
+| **API URL** | The Substratia Cloud endpoint in use |
+| **Config file** | Path to the local credentials file |
+| **Pending** | Memories queued and waiting to sync |
+| **Synced** | Memories successfully synced to the cloud |
+| **Failed** | Memories that could not sync after all retries |
+| **Last sync** | ISO timestamp of the most recent successful sync |
+| **Last error** | Most recent sync error message, if any |
+
+---
+
+## How sync works
+
+Once connected, the sync manager runs entirely in the background — you don't need to trigger it manually.
+
+- **Sync interval** — The server syncs the local queue to Substratia Cloud every **5 minutes**.
+- **Write-time queuing** — Every time `memory_store` creates or updates a memory, that memory is immediately added to the sync queue. The background process picks it up on the next interval.
+- **Offline resilience** — If your device is offline or the Substratia service is temporarily unavailable, memories accumulate in the local queue. The sync manager retries failed items with **exponential backoff**, up to **5 attempts** per memory. Items that exhaust all retries are marked `failed` and visible in the status report.
+- **No data loss** — Your local database is always the primary store. Cloud sync is additive — a network failure never prevents memories from being saved locally.
+
+---
+
+## Troubleshooting
+
+<Accordion title="Sync shows 'failed' status">
+  A `failed` count in your sync status means one or more memories could not be pushed to Substratia Cloud after 5 retry attempts. To diagnose:
+
+  1. **Check your API key format.** It must start with `sk_`. Ask Claude: "Show my memory cloud status" and confirm the connection status reads `Connected`. If it shows `Unavailable`, your key may be invalid or revoked.
+  2. **Verify network access.** Confirm your machine can reach `substratia.io`. A firewall rule or VPN split-tunneling policy can silently block outbound requests.
+  3. **Re-check the status after a few minutes.** If the service was temporarily down, the retry queue will clear itself once connectivity is restored. Ask Claude: "What is my memory sync status?" to see updated counts.
+  4. **Reconnect if the key is stale.** If you regenerated your API key in the Substratia dashboard, reconnect with the new key: "Connect my memory to Substratia Cloud with API key sk_new_key_here."
+</Accordion>
+
+<Accordion title="Memories not appearing on another device">
+  If a memory you stored on one device isn't visible on another, work through these checks:
+
+  1. **Wait for the sync interval.** The background sync runs every 5 minutes. If you stored the memory less than 5 minutes ago, give it a moment and then retry your recall query.
+  2. **Confirm both devices use the same API key.** Cloud sync is keyed to your API key — devices connected with different keys write to isolated namespaces. On each device, run `/memory:status` in Claude Code and compare the **API URL** and **Synced** count to confirm they're pointing at the same account.
+  3. **Check the source device's sync queue.** On the device where you stored the memory, ask Claude: "What is my memory sync status?" A non-zero **Pending** or **Failed** count means the memory hasn't left that device yet. Address any failures using the steps above.
+</Accordion>

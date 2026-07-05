@@ -1,0 +1,100 @@
+---
+title: "Add Custom Tools to Your Remote MCP Server"
+sidebarTitle: "Custom Tools"
+description: "Replace or extend the example tools in your remote MCP server by adding tool definitions in src/index.ts using the MCP SDK."
+---
+
+The template ships with two calculator tools — `add` and `calculate` — to give you a working server out of the box. You replace or extend them by editing `src/index.ts`. You don't need to touch any other file to add new tools.
+
+<Warning>
+  This template has no authentication. Anyone with your Worker URL can call your tools. Do not expose sensitive data or operations.
+</Warning>
+
+## File to edit
+
+All tool logic lives in **`src/index.ts`**. The `init()` method inside the `MyMCP` class is where tools are registered. Every call to `this.server.registerTool(...)` inside `init()` adds one tool to your MCP server.
+
+## How tools are defined
+
+Here is the full structure of the file, including the `add` tool as a representative example:
+
+```typescript src/index.ts
+import { McpAgent } from "agents/mcp";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+
+export class MyMCP extends McpAgent {
+  server = new McpServer({ name: "Authless Calculator", version: "1.0.0" });
+
+  async init() {
+    this.server.registerTool(
+      "add",
+      { inputSchema: { a: z.number(), b: z.number() } },
+      async ({ a, b }) => ({
+        content: [{ type: "text", text: String(a + b) }],
+      })
+    );
+  }
+}
+```
+
+Each `registerTool` call takes three arguments:
+
+1. **Tool name** — a string identifier used by MCP clients to invoke the tool.
+2. **Tool config** — an object with an `inputSchema` property containing Zod validators for each parameter.
+3. **Handler** — an `async` function that receives the validated inputs and returns a `content` array.
+
+## Adding a custom tool
+
+Add your tool inside `init()`, after the existing `registerTool` calls (or replace them entirely). Here is an example `greet` tool that accepts a name and an optional formality flag:
+
+```typescript src/index.ts
+this.server.registerTool(
+  "greet",
+  {
+    inputSchema: {
+      name: z.string(),
+      formal: z.boolean().optional(),
+    },
+  },
+  async ({ name, formal }) => ({
+    content: [
+      {
+        type: "text",
+        text: formal ? `Good day, ${name}.` : `Hey ${name}!`,
+      },
+    ],
+  })
+);
+```
+
+After saving, redeploy to make the tool available to connected clients:
+
+```bash
+npm run deploy
+```
+
+## Input validation with Zod
+
+The `inputSchema` object uses [Zod](https://zod.dev/) to validate and type each parameter. The MCP SDK rejects calls that don't match the schema before your handler runs. Common schema types:
+
+| Schema | Type |
+|---|---|
+| `z.string()` | String |
+| `z.number()` | Number |
+| `z.boolean()` | Boolean |
+| `z.enum(["a", "b"])` | Enum — one of the listed string values |
+| `z.string().optional()` | Optional string — parameter may be omitted |
+| `z.object({ ... })` | Nested object with its own schema |
+
+Chain validators to add constraints — for example, `z.number().min(0)` or `z.string().max(100)`.
+
+## Changing the server name and version
+
+The `McpServer` constructor at the top of the `MyMCP` class sets the name and version that MCP clients see when they connect. Update both to reflect your project:
+
+```typescript src/index.ts
+server = new McpServer({ name: "My Custom Server", version: "2.0.0" });
+```
+
+Redeploy after making this change for clients to pick up the updated metadata.

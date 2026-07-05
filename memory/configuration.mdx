@@ -1,0 +1,101 @@
+---
+title: "Configure Memory MCP: TTL, Storage, and Behavior"
+sidebarTitle: "Configuration"
+description: "Customize memory storage location, default TTL, and database driver using environment variables in your Claude MCP server config."
+---
+
+Memory MCP is configured entirely through environment variables. You pass them through the `env` field in your `claude_desktop_config.json` server block — no separate config file or CLI flags needed. The server reads these variables at startup, so any change requires restarting Claude Desktop to take effect.
+
+## Environment variables
+
+<ParamField body="MEMORY_DB_PATH" type="string">
+  Override the database file location. Use an absolute path. If the directory doesn't exist, the server creates it on first run.
+
+  **Default:** platform-specific (see [Overview — Database location](/memory/overview#database-location))
+
+  **Example:** `/Users/you/my-memories/memory.db`
+</ParamField>
+
+<ParamField body="DEFAULT_TTL_DAYS" type="number">
+  Default memory lifetime in days when no explicit TTL is set on a memory and importance-based TTL is not used. Set to a higher value to keep low-importance memories longer.
+
+  **Default:** `90`
+
+  **Example:** `180`
+</ParamField>
+
+<ParamField body="MEMORY_DB_DRIVER" type="string">
+  The SQLite driver to use. `better-sqlite3` is the default and recommended option — it's a compiled native module and the fastest option. `sqljs` is a pure-JavaScript fallback for environments where native compilation is unavailable.
+
+  **Default:** `better-sqlite3`
+
+  **Accepted values:** `better-sqlite3`, `sqljs`
+</ParamField>
+
+<ParamField body="SUBSTRATIA_API_KEY" type="string">
+  Your Substratia Pro API key for cloud sync. Setting this variable is equivalent to running `memory_cloud action:connect` — the server connects to the cloud on startup. API keys start with `sk_`.
+
+  **Default:** none (cloud sync disabled)
+
+  **Example:** `sk_live_abc123…`
+</ParamField>
+
+<ParamField body="SUBSTRATIA_API_URL" type="string">
+  Override the Substratia Cloud API endpoint. You only need this if you are running a self-hosted instance of the Substratia backend.
+
+  **Default:** `https://agreeable-chameleon-83.convex.site`
+</ParamField>
+
+## Example config with env vars
+
+Add an `env` block to your `claude_desktop_config.json` to apply environment variables:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@whenmoon-afk/memory-mcp"],
+      "env": {
+        "MEMORY_DB_PATH": "/Users/you/memories/memory.db",
+        "DEFAULT_TTL_DAYS": "180"
+      }
+    }
+  }
+}
+```
+
+All values in `env` must be strings. Pass numbers as quoted strings (e.g. `"180"`, not `180`).
+
+## TTL tiers by importance
+
+When you store a memory without an explicit `ttl_days` value, the server calculates expiration automatically based on the memory's importance score (0–10). Higher importance means a longer lifetime:
+
+| Importance score | TTL |
+|---|---|
+| 0–1 | 7 days |
+| 2–3 | 30 days |
+| 4–5 | 90 days |
+| 6–7 | 180 days |
+| 8–9 | 365 days |
+| 10 | Permanent (never expires) |
+
+`DEFAULT_TTL_DAYS` sets the fallback when the server can't determine an importance-based TTL. It does not override the importance tiers — it only applies when importance signals are absent.
+
+You can also pass `ttl_days: null` to any `memory_store` call to make a specific memory permanent regardless of its importance score.
+
+## Customizing database location
+
+<Tip>
+  Use an absolute path for `MEMORY_DB_PATH` if you access your memory database from multiple tools — for example, if you use the [Python CLI utilities](/memory/python-utilities) alongside the MCP server. Both the server and the Python scripts read `MEMORY_DB_PATH` from the environment, so setting it once ensures they all read from and write to the same file.
+</Tip>
+
+A good practice is to put the database in a dedicated directory you control, separate from the default OS-specific location. This makes it easier to back up, move between machines, or symlink into a cloud-synced folder:
+
+```json
+"env": {
+  "MEMORY_DB_PATH": "/Users/you/Documents/claude-memories/memory.db"
+}
+```
+
+The server creates the directory automatically on first start if it doesn't exist.

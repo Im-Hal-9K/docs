@@ -1,0 +1,81 @@
+---
+title: "Import Claude Code Sessions into Memory"
+sidebarTitle: "Import Sessions"
+description: "Automatically import all your past Claude Code conversations into the Memory MCP database for persistent cross-session recall."
+---
+
+Every Claude Code conversation is stored as a JSONL file on your machine under `~/.claude/projects/`. The `import_all_sessions.py` script reads those files, chunks them intelligently at topic boundaries, scrubs sensitive data, and writes them as searchable memories — giving Claude full context of everything you've worked on, across every future session.
+
+## How it works
+
+The script handles the full pipeline automatically:
+
+- **Discovery** — scans `~/.claude/projects/` recursively for all `.jsonl` session files, skipping sub-agent logs (`agent-*.jsonl`) and sessions with fewer than 5 messages
+- **Extraction** — pulls readable text from all message types: user messages, assistant responses, tool calls (`Read`, `Write`, `Edit`, `Bash`, `WebSearch`), and tool results
+- **Scrubbing** — removes sensitive patterns before anything touches the database: Anthropic API keys, OpenAI-style keys, GitHub personal access tokens (`ghp_…`), inline API key assignments, and quoted passwords
+- **Chunking** — splits large sessions at topic boundaries (a substantive new user request) or every ~4,000 characters, whichever comes first
+- **Deduplication** — tracks imported sessions by source filename in metadata; re-running the script skips any session already in the database
+
+## Get the script
+
+```bash
+curl -O https://raw.githubusercontent.com/Im-Hal-9K/claude-memory-tools/main/import_all_sessions.py
+```
+
+## Run the import
+
+<Steps>
+  <Step title="Run a full import">
+    Convert all sessions and write them to the database in one command:
+
+    ```bash
+    python import_all_sessions.py
+    ```
+
+    The script prints each project name and how many messages and chunks it produced, then rebuilds the FTS index automatically when finished.
+  </Step>
+
+  <Step title="Optional: dry run first">
+    If you want to preview what will be parsed without writing anything to the database, use `--convert-only`:
+
+    ```bash
+    python import_all_sessions.py --convert-only
+    ```
+
+    This parses and chunks every session file and prints the results, but makes no changes to the database.
+  </Step>
+
+  <Step title="Optional: write previously converted chunks">
+    If you've already run `--convert-only` and are ready to commit the results, use `--import-only` to skip re-parsing and write directly to the database:
+
+    ```bash
+    python import_all_sessions.py --import-only
+    ```
+  </Step>
+
+  <Step title="Rebuild the FTS index if search isn't working">
+    If full-text search returns unexpected results after an import, rebuild the index from scratch:
+
+    ```bash
+    python import_all_sessions.py --rebuild-fts
+    ```
+
+    This deletes and repopulates the `memories_fts` table from all active (non-deleted) memory entries.
+  </Step>
+</Steps>
+
+<Note>
+  The script automatically scrubs API keys, GitHub tokens, and passwords from session content before inserting anything into the database. It reads only local JSONL files on your machine — no data is sent to any server at any point.
+</Note>
+
+## After importing
+
+Try these prompts in Claude to surface your session history:
+
+- "What projects have I worked on recently?"
+- "What was the approach we took for [feature name]?"
+- "Remind me of the decisions made in our last session."
+
+## Re-running safely
+
+The script stores the source filename in each memory entry's metadata. When you re-run the import, it reads back all existing `claude-session` metadata from the database and skips any session whose filename already appears there. Only new sessions — files that weren't present during the last run — are processed and added.

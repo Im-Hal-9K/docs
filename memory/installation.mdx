@@ -1,0 +1,122 @@
+---
+title: "Install Memory MCP Server for Claude Desktop"
+sidebarTitle: "Installation"
+description: "Install and configure the Memory MCP server with Claude Desktop or Claude Code using the auto-installer or manual JSON config."
+---
+
+You can add Memory MCP to Claude Desktop in two ways: run the auto-installer and let it configure everything for you, or edit the Claude Desktop config file by hand. Both methods produce the same result — a running MCP server that Claude connects to on startup.
+
+## Requirements
+
+- Node.js 18 or later (`node --version` to check)
+- Claude Desktop (for Desktop installation) or Claude Code (for plugin installation)
+
+## Method 1: Auto-installer
+
+<Steps>
+  <Step title="Run the installer">
+    Open a terminal and run:
+
+    ```bash
+    npx @whenmoon-afk/memory-mcp install
+    ```
+
+    The installer detects your operating system, locates your Claude Desktop config file, creates a backup of the existing config, and injects the Memory MCP server entry automatically. It also creates the database directory if it doesn't exist yet.
+  </Step>
+  <Step title="Restart Claude Desktop">
+    Quit Claude Desktop completely and reopen it. Claude loads MCP server config at startup — a restart is required for the new server to appear.
+  </Step>
+  <Step title="Verify the tools are available">
+    Open a new chat in Claude Desktop and ask: **"Do you have access to memory tools?"**
+
+    Claude should confirm that `memory_store`, `memory_recall`, and `memory_forget` are available.
+  </Step>
+</Steps>
+
+## Method 2: Manual config
+
+Open your Claude Desktop config file in a text editor and add the `memory` server block inside `mcpServers`. Config file locations by platform:
+
+| Platform | Config file path |
+|---|---|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%/Claude/claude_desktop_config.json` |
+
+**If the file already exists**, merge the `memory` block into your existing `mcpServers` object:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@whenmoon-afk/memory-mcp"]
+    }
+  }
+}
+```
+
+**If you're creating the file from scratch**, paste the block above as the entire file contents.
+
+**Windows users**: If you see a "Connection closed" error, wrap the command with `cmd /c`:
+
+```json
+{
+  "mcpServers": {
+    "memory": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@whenmoon-afk/memory-mcp"]
+    }
+  }
+}
+```
+
+Alternatively, use the full path to `npx.cmd` (e.g. `C:\\Program Files\\nodejs\\npx.cmd`) as the `command` value with `["-y", "@whenmoon-afk/memory-mcp"]` as args.
+
+After saving the file, restart Claude Desktop.
+
+## Claude Code installation
+
+Claude Code users install Memory MCP as a plugin rather than editing a JSON config file directly:
+
+```bash
+claude plugin install github:whenmoon-afk/claude-memory-mcp
+```
+
+The plugin's `.claude-plugin/plugin.json` manifest auto-registers two lifecycle hooks and a set of slash commands:
+
+- **`SessionStart` hook** — fires at session startup with a prompt reminding Claude to use `memory_recall` to search past learnings, decisions, and preferences.
+- **`Stop` hook** — fires before a session ends, prompting Claude to use `memory_store` to save any important decisions, preferences, or solutions from the session.
+
+**Slash commands** available in Claude Code after installation:
+
+| Command | Description |
+|---|---|
+| `/memory:connect [api_key]` | Connect to Substratia Cloud for cross-device sync. Run without an argument for setup instructions. |
+| `/memory:status` | Show total memories stored, cloud sync status, and recent activity. |
+
+## Desktop Extension
+
+If you prefer the Claude Desktop Extensions workflow, download `memory-mcp.mcpb` from the [GitHub Releases page](https://github.com/WhenMoon-afk/claude-memory-mcp/releases) and double-click to install. The `.mcpb` bundle includes the server and registers it with Claude Desktop automatically — no terminal required.
+
+## Verify installation
+
+After restarting Claude Desktop, open a new chat and ask:
+
+> "Do you have access to memory tools?"
+
+Claude should respond confirming that `memory_store`, `memory_recall`, and `memory_forget` are available. If the tools don't appear, check the troubleshooting steps below.
+
+<AccordionGroup>
+  <Accordion title="Tools not appearing in Claude Desktop">
+    1. Quit Claude Desktop completely and reopen it — menu bar quit, not just closing the window.
+    2. Open your config file and verify it is valid JSON (no trailing commas, correct bracket nesting).
+    3. Confirm Node.js 18+ is installed: `node --version`.
+  </Accordion>
+  <Accordion title="Slow first start">
+    The first run downloads and installs dependencies from npm, which can take 30 seconds or more. Subsequent starts are faster. For the fastest startup, install the package globally with `npm install -g @whenmoon-afk/memory-mcp` and use the `node` command with the absolute path to `dist/index.js`.
+  </Accordion>
+  <Accordion title="Stale cached version">
+    If npx keeps launching an old version, clear the npm cache: `npm cache clean --force`, then restart Claude Desktop.
+  </Accordion>
+</AccordionGroup>

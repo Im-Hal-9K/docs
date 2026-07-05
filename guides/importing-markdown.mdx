@@ -1,0 +1,91 @@
+---
+title: "Import Your Markdown Notes into Claude's Memory"
+sidebarTitle: "Import Markdown"
+description: "Bulk-import a folder of markdown files into the Memory MCP database so Claude can recall your notes across sessions."
+---
+
+If you have existing notes, wikis, or documentation in markdown, you can bulk-import them so Claude can recall their content across every future conversation. The `import_to_memory.py` script reads your `.md` files, strips formatting, generates summaries, and writes each file as a searchable memory entry — all in seconds.
+
+## Prerequisites
+
+- Python 3.x
+- Memory MCP installed and connected to Claude Desktop at least once (this initialises the SQLite database)
+- One or more `.md` files in a folder on your machine
+
+## Get the script
+
+Download `import_to_memory.py` directly from the claude-memory-tools repository:
+
+```bash
+curl -O https://raw.githubusercontent.com/Im-Hal-9K/claude-memory-tools/main/import_to_memory.py
+```
+
+## Run the import
+
+<Steps>
+  <Step title="Point the script at your notes folder">
+    Run the script with the path to the folder containing your markdown files:
+
+    ```bash
+    python import_to_memory.py /path/to/your/notes
+    ```
+
+    The script prints each filename as it processes it, then shows a final count of imported and skipped files.
+  </Step>
+
+  <Step title="Understand what the script does">
+    For every `.md` file in the folder (non-recursive — it does not descend into subdirectories), the script:
+
+    - Parses YAML frontmatter for metadata such as `title`
+    - Strips markdown formatting (headings, bold, etc.) to produce clean plain text
+    - Generates a summary from the document's headings and first sentence
+    - Inserts the file as a memory entry with `source: markdown-import` and an importance score of `0.7`
+
+    Empty files are silently skipped.
+  </Step>
+
+  <Step title="Verify the import">
+    Open Claude Desktop and ask:
+
+    > "What do you know about [topic from your notes]?"
+
+    Claude will search its memory and surface content from the files you just imported.
+  </Step>
+</Steps>
+
+## What gets imported
+
+Each file becomes one memory entry. The script preserves the following:
+
+| Field | Source |
+|-------|--------|
+| **Title** | `title` key in YAML frontmatter, or the filename if no frontmatter is present |
+| **Content** | Full plain text of the file with markdown formatting stripped |
+| **Summary** | Auto-generated from headings and the first sentence |
+| **Source metadata** | `source: markdown-import` and the original filename — stored in the `metadata` column |
+
+<Tip>
+  For large note collections (hundreds of files), run the import in batches by subdirectory rather than pointing the script at a single top-level folder. Because the script scans non-recursively, you control exactly which subset of notes to import in each pass. Each file becomes one memory entry, so batching keeps individual runs manageable.
+</Tip>
+
+## Re-importing
+
+The script does **not** deduplicate by filename for markdown imports. If you run it twice on the same folder, you will get duplicate entries in the database. Before re-running, check what is already stored:
+
+```bash
+python memory_search.py --list
+```
+
+If duplicates exist, you can soft-delete them by ID:
+
+```bash
+python memory_search.py --delete <memory-id-prefix>
+```
+
+## After importing
+
+Try these prompts in Claude to confirm your notes are accessible:
+
+- "What do you know about [project name]?"
+- "Find my notes on [topic]."
+- "What have I written about [subject]?"

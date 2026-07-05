@@ -1,0 +1,36 @@
+---
+title: "Chaos Navigation MCP Tools: AI Memory & Knowledge Integration"
+sidebarTitle: "Introduction"
+description: "Persistent memory, full-text search, and Capacities PKM integration for Claude — delivered as local MCP servers you control."
+---
+
+Chaos Navigation MCP Tools is a suite of local [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers that extend Claude with capabilities it lacks out of the box. The suite gives Claude cross-session memory backed by FTS5 full-text search, a bridge to the Capacities personal knowledge management app, and a ready-to-deploy remote MCP server template — all running on your own machine so you stay in control of your data.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Install the Memory MCP server and connect it to Claude in under five minutes.
+  </Card>
+  <Card title="Memory MCP" icon="brain" href="/memory/overview">
+    Give Claude persistent, searchable memory that survives across sessions.
+  </Card>
+  <Card title="Capacities MCP" icon="database" href="/capacities/overview">
+    Connect Claude directly to your Capacities PKM workspace.
+  </Card>
+  <Card title="Remote MCP Server" icon="cloud" href="/remote-mcp/overview">
+    Deploy your own authless remote MCP endpoint on Cloudflare Workers.
+  </Card>
+</CardGroup>
+
+## What's in the suite
+
+**Memory MCP** is a fork of `@whenmoon-afk/memory-mcp` with significantly improved FTS5 full-text search — including OR-expansion and prefix wildcards — plus auto-summarization, entity extraction, importance scoring, TTL management, and optional Substratia Cloud sync. Memories persist in a local SQLite database and are available to Claude in every future conversation.
+
+**Python Utilities** are CLI tools that sit alongside the Memory MCP server. Use them to bulk-import markdown folders, import Claude Code session transcripts, search the memory database from the terminal, and export chat logs for archiving or analysis.
+
+**Capacities MCP** bridges Claude to the [Capacities](https://capacities.io) PKM app. Through this server Claude can list your spaces, search across your knowledge base, read individual objects, save weblinks, and create or update daily notes — all without leaving your conversation.
+
+**Remote MCP Server** is a Cloudflare Workers template you can fork and deploy to expose your own authless remote MCP endpoint. It gives you a URL-addressable MCP server you can share or use from any device, without running a local process.
+
+<Note>
+  **How MCP works** — MCP (Model Context Protocol) is an open standard that lets AI assistants talk to external tools and data sources. Each server in this suite runs as a local process and communicates with Claude over `stdio`. Claude Desktop and Claude Code discover these servers through a JSON config file, launch them automatically at startup, and expose their tools to Claude during every conversation. No cloud account or special permissions are required for the local servers.
+</Note>

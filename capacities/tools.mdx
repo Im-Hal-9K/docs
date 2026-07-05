@@ -1,0 +1,139 @@
+---
+title: "Capacities MCP Tools: Search, Read, Save, and Organize"
+sidebarTitle: "MCP Tools"
+description: "Reference for all six Capacities MCP tools: list spaces, get space info, search, read objects, save weblinks, and write to daily notes."
+---
+
+The Capacities MCP server exposes six tools that Claude uses to interact with your Capacities workspace. You don't call these tools directly — you ask Claude naturally and it selects and invokes the right tool for you.
+
+---
+
+## `capacities_list_spaces`
+
+Returns a JSON list of all your Capacities spaces with their IDs and names. Use this first to discover the space UUIDs you need for other tools.
+
+**Parameters:** None
+
+**Example prompt**
+> "What Capacities spaces do I have?"
+
+---
+
+## `capacities_get_space_info`
+
+Returns the structure and collection schema for a specific space, including property definitions, types, and collection metadata. Use `summary` mode to get a lightweight listing when you only need structure names and IDs.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `spaceId` | string (UUID) | ✅ | The space to inspect |
+| `summary` | boolean | — | Return only structure names, IDs, and collection info — no property definitions. Much smaller payload, ideal for discovery |
+| `filterStructureIds` | string[] | — | Only return structures matching these IDs (e.g. just `"Project"` and `"Note"`) |
+| `excludeMediaTypes` | boolean | — | Exclude built-in media structures: Image, File, PDF, and Weblink |
+
+**Example prompt**
+> "Show me the structure of my Work space."
+
+---
+
+## `capacities_search`
+
+Searches for content across one or more spaces. Uses the `/lookup` endpoint (title-based, faster) with automatic fallback to the legacy `/search` endpoint if needed.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `searchTerm` | string | ✅ | The text to search for |
+| `spaceIds` | string[] | ✅ | Array of space UUIDs to search within |
+| `mode` | string | — | `"fullText"` or `"title"` (default: `"title"`) |
+| `filterStructureIds` | string[] | — | Filter results to specific object/structure types |
+
+**Example prompt**
+> "Search my notes for 'machine learning'."
+
+---
+
+## `capacities_read_object_content`
+
+Retrieves the content of a Capacities object by its ID. Because the Capacities API returns search snippets rather than full note bodies, this tool uses a multi-strategy cascade: fullText lookup via `/lookup` → title lookup via `/lookup` → legacy `/search` fallback. Providing `title` significantly improves matching accuracy.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `objectId` | string (UUID) | ✅ | The object to read. Get this from **Copy object reference** in Capacities |
+| `spaceId` | string (UUID) | ✅ | The space containing the object |
+| `title` | string | — | Title or partial title of the object — strongly recommended to improve search results |
+
+<Note>
+  Content may be incomplete, as the Capacities API returns search snippets rather than the full note body. Providing the `title` parameter significantly improves the results you get back.
+</Note>
+
+**Example prompt**
+> "Read the content of note `abc-123` from my Research space."
+
+---
+
+## `capacities_save_weblink`
+
+Saves a URL as a weblink object in a Capacities space, with optional metadata. Tags must exactly match existing tag names in Capacities — any unrecognized tag will be created automatically.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `spaceId` | string (UUID) | ✅ | The destination space |
+| `url` | string | ✅ | The URL to save |
+| `titleOverwrite` | string | — | Override the auto-detected page title |
+| `descriptionOverwrite` | string | — | Override the auto-detected description |
+| `tags` | string[] | — | Tags to apply. Must match existing tag names exactly, or new tags will be created |
+| `mdText` | string | — | Markdown notes to attach to the weblink's notes section |
+
+**Example prompt**
+> "Save this article to my Research space: https://example.com/article"
+
+---
+
+## `capacities_save_to_daily_note`
+
+Appends markdown content to today's daily note in a space. By default, Capacities adds a timestamp before your content; set `noTimestamp` to `true` to suppress it.
+
+**Parameters**
+
+| Name | Type | Required | Description |
+|---|---|---|---|
+| `spaceId` | string (UUID) | ✅ | The space whose daily note to append to |
+| `mdText` | string | ✅ | The markdown content to append |
+| `origin` | string | — | Origin label for the content. Only `"commandPalette"` is supported |
+| `noTimestamp` | boolean | — | If `true`, omits the automatic timestamp Capacities would otherwise prepend |
+
+**Example prompt**
+> "Add 'Reviewed PR #42' to my daily note in the Work space."
+
+---
+
+## Example prompts
+
+Here are natural language prompts you can use with Claude once the server is connected:
+
+```
+List all my Capacities spaces and their IDs
+```
+
+```
+Search my Personal space for notes about 'project planning'
+```
+
+```
+Save https://example.com/article to my Research space with the tag 'ai'
+```
+
+```
+Append '- Completed sprint review' to today's daily note in my Work space
+```
+
+```
+Read the note with ID abc-123 from my Research space
+```

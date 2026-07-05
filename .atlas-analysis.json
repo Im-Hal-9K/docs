@@ -1,0 +1,99 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Chaos Navigation MCP Tools",
+  "projectDescription": "A suite of Model Context Protocol (MCP) servers that give Claude persistent memory, full-text search, and integration with personal knowledge management tools like Capacities.",
+  "theme": "luma",
+  "primaryColor": "#6366F1",
+  "lightColor": "#EEF2FF",
+  "darkColor": "#3730A3",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Memory MCP",
+            "pages": [
+              "memory/overview",
+              "memory/installation",
+              "memory/configuration",
+              "memory/tools",
+              "memory/cloud-sync",
+              "memory/python-utilities"
+            ]
+          },
+          {
+            "group": "Capacities MCP",
+            "pages": [
+              "capacities/overview",
+              "capacities/installation",
+              "capacities/tools"
+            ]
+          },
+          {
+            "group": "Remote MCP Server",
+            "pages": [
+              "remote-mcp/overview",
+              "remote-mcp/deploy",
+              "remote-mcp/customizing"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/importing-markdown",
+              "guides/importing-sessions",
+              "guides/troubleshooting"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Persistent cross-session memory for Claude via SQLite + FTS5",
+    "Improved OR-expansion and prefix-wildcard full-text search (fork improvement)",
+    "Auto-summarization and named entity extraction on memory store",
+    "Importance-based TTL and hybrid relevance scoring on recall",
+    "Token-budget-aware dual-phase recall response (index + details)",
+    "Optional Substratia Cloud sync with offline queue and exponential backoff",
+    "Claude Code session import with sensitive data scrubbing and deduplication",
+    "Markdown folder bulk import into the memory database",
+    "CLI search, list, stats, and soft-delete over the memory database",
+    "Capacities PKM integration: search, read objects, save weblinks, daily notes",
+    "Authless remote MCP server template deployable to Cloudflare Workers"
+  ],
+  "publicApiSurface": [
+    "memory_store(content, type, id?, importance?, entities?, tags?, metadata?, ttl_days?, expires_at?, provenance?)",
+    "memory_recall(query, max_tokens?, type?, entities?, limit?)",
+    "memory_forget(id, reason?)",
+    "memory_cloud(action, api_key?)",
+    "capacities_list_spaces()",
+    "capacities_get_space_info(spaceId, summary?, filterStructureIds?, excludeMediaTypes?)",
+    "capacities_search(searchTerm, spaceIds, mode?, filterStructureIds?)",
+    "capacities_read_object_content(objectId, spaceId, title?)",
+    "capacities_save_weblink(spaceId, url, titleOverwrite?, descriptionOverwrite?, tags?, mdText?)",
+    "capacities_save_to_daily_note(spaceId, mdText, origin?, noTimestamp?)",
+    "import_to_memory.py /path/to/markdown/folder",
+    "import_all_sessions.py [--convert-only | --import-only | --rebuild-fts]",
+    "memory_search.py <query> [--list | --stats | --delete <id>]",
+    "export_chat.py session.jsonl [output.md]",
+    "add(a, b) — remote MCP tool",
+    "calculate(operation, a, b) — remote MCP tool",
+    "MEMORY_DB_PATH env var",
+    "DEFAULT_TTL_DAYS env var",
+    "MEMORY_DB_DRIVER env var",
+    "SUBSTRATIA_API_KEY env var",
+    "SUBSTRATIA_API_URL env var",
+    "CAPACITIES_API_KEY env var",
+    "/memory:connect Claude Code slash command",
+    "/memory:status Claude Code slash command"
+  ]
+}

@@ -1,0 +1,237 @@
+---
+title: "Python Utilities for Memory MCP Database Management"
+sidebarTitle: "Python Utilities"
+description: "Four Python scripts to import markdown files, import Claude Code sessions, search memories from the CLI, and export chat logs to markdown."
+---
+
+The four Python utilities in this toolkit let you bulk-import data into the Memory MCP database, search it from the terminal, and export Claude Code session logs to readable markdown — all without installing any third-party packages. Every script relies exclusively on the Python standard library. Use them alongside the MCP tools whenever you need to operate on large batches of data or manage the database from outside Claude Desktop.
+
+## Prerequisites
+
+- **Python 3.x** — no additional packages required.
+- **An initialized Memory MCP database** — connect Claude Desktop to the Memory MCP server at least once before running any script. The server creates the SQLite database on first launch.
+- **Database path** — each script reads the `MEMORY_DB_PATH` environment variable. If that variable is not set, the scripts fall back to the platform default:
+
+  | Platform | Default path |
+  |----------|-------------|
+  | macOS | `~/.claude-memories/memory.db` |
+  | Linux | `~/.local/share/claude-memories/memory.db` |
+  | Windows | `%APPDATA%\claude-memories\memory.db` |
+
+---
+
+## `import_to_memory.py` — Import a folder of markdown files
+
+```bash
+python import_to_memory.py /path/to/markdown/folder
+```
+
+Point this script at any directory and it imports every `.md` file it finds as a separate memory entry.
+
+**What it does:**
+
+- Scans the target folder for all `.md` files (non-recursive).
+- Parses and strips YAML frontmatter before processing content.
+- Strips markdown formatting (headings, bold, etc.) and generates a descriptive summary by combining heading context with the first sentence of the file.
+- Inserts each file into the `memories` table with type `fact`, importance `0.7`, and metadata `source: markdown-import`.
+- Populates the full-text search (FTS) index automatically.
+- Skips empty files and reports them as skipped.
+
+**Example:**
+
+```bash
+python import_to_memory.py ~/notes/work
+# Imports all .md files in ~/notes/work into the memory database
+```
+
+The script prints a `+` line for each file imported and a `-` line for each empty file skipped, then shows a final count:
+
+```
+Database: /Users/you/.claude-memories/memory.db
+Found 12 markdown files to import.
+  + meeting-notes-2025-01-10.md
+  + architecture-decisions.md
+  - empty-draft.md (empty, skipped)
+
+Done: 11 imported, 1 skipped.
+```
+
+---
+
+## `import_all_sessions.py` — Import all Claude Code sessions
+
+```bash
+python import_all_sessions.py                  # full import
+python import_all_sessions.py --convert-only   # parse only, no DB writes
+python import_all_sessions.py --import-only    # import from pre-parsed chunks
+python import_all_sessions.py --rebuild-fts    # rebuild FTS index only
+```
+
+This script walks `~/.claude/projects/` and imports every Claude Code JSONL session file it finds into the memory database.
+
+**What it does:**
+
+- Scans all project subdirectories under `~/.claude/projects/` for `.jsonl` session files.
+- Skips `agent-*.jsonl` sub-agent logs automatically.
+- Skips sessions with fewer than 5 messages (too short to be useful).
+- Scrubs sensitive data — API keys (Anthropic, OpenAI), GitHub tokens, and passwords are replaced with redaction markers before any content is stored.
+- Chunks large sessions into pieces of approximately 4,000 characters, splitting at natural topic boundaries (new questions or requests) rather than arbitrary character limits.
+- Generates a descriptive summary for each chunk based on the first substantive user message in that chunk.
+- Deduplicates by source filename — re-running the script never double-imports a session.
+- Rebuilds the FTS index after every import run.
+
+<Note>
+This script imports from Claude Code's local session storage (`~/.claude/projects/`). It does not access any remote data.
+</Note>
+
+**Flag reference:**
+
+| Flag | Behavior |
+|------|----------|
+| *(none)* | Convert sessions and import all chunks into the database |
+| `--convert-only` | Parse and chunk sessions, print output — no database writes |
+| `--import-only` | Import chunks that were already parsed; skip the conversion step |
+| `--rebuild-fts` | Wipe and rebuild the full-text search index from existing `memories` rows |
+
+---
+
+## `memory_search.py` — Search and manage from the CLI
+
+```bash
+python memory_search.py "search query"    # search memories
+python memory_search.py --list            # list all active memories
+python memory_search.py --stats           # database statistics
+python memory_search.py --delete <id>     # soft-delete a memory
+```
+
+Use this script to inspect or clean up the memory database without opening Claude.
+
+### Search
+
+```bash
+python memory_search.py "accessibility audit"
+```
+
+Runs a case-insensitive full-text search against all active memory content. Results show the summary, a truncated ID, and a 200-character preview of the matching content:
+
+```
+Found 3 result(s) for 'accessibility audit':
+
+  1. [Accessibility audit: Color contrast ratios reviewed across all UI components.]
+     ID: mem_4a7b...
+     Preview: User: Can you run an accessibility audit on the dashboard? Claude: [Bash: axe-cli ...
+
+  2. ...
+```
+
+### List all memories
+
+```bash
+python memory_search.py --list
+```
+
+Prints a numbered table of every active memory with its summary, type, importance score, and truncated ID:
+
+```
+Total: 42 memories
+
+    1. Session claude-memory-tools pt1: How do I structure the import script?
+       Type: fact | Importance: 0.5
+       ID: mem_9c2e...
+    2. Meeting notes: Q1 planning session...
+       Type: fact | Importance: 0.7
+       ID: mem_1f3a...
+```
+
+### Database statistics
+
+```bash
+python memory_search.py --stats
+```
+
+Outputs a summary of the database file and its contents:
+
+```
+Database: /Users/you/.claude-memories/memory.db
+Size: 2048.0 KB
+Active memories: 156
+Deleted memories: 4
+Types:
+  fact: 156
+```
+
+### Soft-delete a memory
+
+```bash
+python memory_search.py --delete mem_4a7b
+```
+
+Pass an ID prefix (the first few characters are enough) and the script locates the matching active memory, confirms what it found, and marks it as deleted — it is not removed from the database, only excluded from search results and listings:
+
+```
+Deleted: Accessibility audit: Color contrast ratios reviewed... (mem_4a7b...)
+```
+
+---
+
+## `export_chat.py` — Export a Claude Code session to readable markdown
+
+```bash
+python export_chat.py session.jsonl              # saves to session.md
+python export_chat.py session.jsonl output.md    # custom output path
+```
+
+Convert any Claude Code `.jsonl` session file into a clean, human-readable markdown document.
+
+**Input:** a `.jsonl` session file from `~/.claude/projects/<project-slug>/`.
+
+**Output:** a markdown file with a metadata header, followed by the conversation formatted with `## User` and `## Claude` section headings.
+
+**Formatting rules:**
+
+- Tool calls are collapsed into compact inline annotations rather than dumping raw JSON:
+  - `*[Bash: `command`]*`
+  - `*[Read: path/to/file]*`
+  - `*[Write: path/to/file]*`
+  - `*[Edit: path/to/file]*`
+  - `*[Search: query]*`
+  - `*[Fetch: url]*`
+  - `*[Tool: ToolName]*` for anything else
+- Tool result blocks (raw command output, file contents) are omitted to keep exports readable.
+- System messages, queue operations, file-history snapshots, and summary entries are omitted.
+
+**Example output:**
+
+```markdown
+## User
+What files are in this directory?
+
+## Claude
+*[Bash: `ls -la`]*
+
+Here are the files in the current directory: ...
+```
+
+---
+
+## Finding your session files
+
+Claude Code stores session files at:
+
+```
+~/.claude/projects/<project-slug>/
+```
+
+Each session is a `.jsonl` file named by timestamp (for example, `20250110T143022.jsonl`). The `<project-slug>` is derived from the absolute path of the project folder — for example, a project at `/Users/you/dev/my-app` becomes `c--Users-you-dev-my-app`.
+
+To list your available sessions:
+
+```bash
+ls ~/.claude/projects/
+```
+
+---
+
+<Tip>
+Run `import_all_sessions.py` after a focused work session, then use the `memory_recall` MCP tool at the start of your next session. Claude will have full context of past decisions, code patterns, and unresolved questions from your previous work — without you having to re-explain anything.
+</Tip>

@@ -1,0 +1,121 @@
+---
+title: "Troubleshoot MCP Tool Issues and Common Errors"
+sidebarTitle: "Troubleshooting"
+description: "Resolve common issues with Memory MCP, Capacities MCP, and remote MCP server setup including config errors, search problems, and connection failures."
+---
+
+This guide covers the most common issues you may encounter when setting up and using the Memory MCP, Capacities MCP, and Remote MCP Server tools — along with the steps to resolve them.
+
+## Memory MCP
+
+<AccordionGroup>
+
+<Accordion title="Claude doesn't show memory tools">
+  Memory tools are missing from Claude when the MCP server fails to start. Work through these checks in order:
+
+  1. Open `claude_desktop_config.json` in a text editor and confirm it is valid JSON. Even a single trailing comma or mismatched bracket prevents Claude Desktop from loading any MCP servers.
+  2. Verify Node.js 18 or later is installed: run `node --version` in your terminal.
+  3. Quit Claude Desktop completely (don't just close the window — use **Quit** from the menu or system tray) and relaunch it.
+  4. Check Claude Desktop's logs for error messages. On macOS, open Console.app and filter by `Claude`. On Windows, look in `%APPDATA%\Claude\logs\`.
+</Accordion>
+
+<Accordion title="Search returns no results for multi-word queries">
+  Multi-word queries can fail against the default `@whenmoon-afk/memory-mcp` package because it uses AND logic for FTS — all terms must appear together in the same memory. This suite's fork adds OR-expansion and prefix wildcards to address this.
+
+  - Confirm you are running `@whenmoon-afk/memory-mcp` v2.5.0 or later, which includes OR-expansion.
+  - Try shorter, more targeted queries: instead of `"bonsai tree plant care"`, try `"bonsai plant"`.
+  - Run `python memory_search.py --list` to confirm that memories actually exist in the database before assuming search is broken.
+</Accordion>
+
+<Accordion title="Memories expire too quickly">
+  Memory TTL is determined by the importance score assigned at storage time. Low-importance memories expire after 7 days by default.
+
+  - Ask Claude to store high-priority information explicitly: *"Remember this permanently: …"* — Claude will set a higher importance score.
+  - Raise the default TTL for all new memories by adding `DEFAULT_TTL_DAYS=365` to the `env` block in your MCP server config.
+  - For memories that must never expire, ask Claude to store them with `ttl_days: null` when calling `memory_store` directly.
+
+  The default TTL for the Memory MCP server is **90 days** when `DEFAULT_TTL_DAYS` is not set.
+</Accordion>
+
+<Accordion title="Database not found / wrong path">
+  The Python utilities and the MCP server must reference the same database file. Default locations by platform:
+
+  | Platform | Default path |
+  |----------|-------------|
+  | macOS | `~/.claude-memories/memory.db` |
+  | Linux | `~/.local/share/claude-memories/memory.db` |
+  | Windows | `%APPDATA%\claude-memories\memory.db` |
+
+  If you have set a custom location, export the same value when running Python scripts:
+
+  ```bash
+  MEMORY_DB_PATH=/custom/path/memory.db python memory_search.py --list
+  ```
+
+  Or set `MEMORY_DB_PATH` in the `env` block of your MCP server config so the server and scripts always agree on the path.
+</Accordion>
+
+<Accordion title="import_all_sessions.py finds no sessions">
+  The script looks for JSONL files under `~/.claude/projects/`. If that directory is empty or missing:
+
+  - Confirm Claude Code has stored sessions by running: `ls ~/.claude/projects/`
+  - If the directory is empty, start and complete at least one Claude Code session, then re-run the import script.
+  - Sessions with fewer than 5 messages are intentionally skipped — start a more substantial session if needed.
+</Accordion>
+
+</AccordionGroup>
+
+## Capacities MCP
+
+<AccordionGroup>
+
+<Accordion title="Capacities tools not found in Claude">
+  The Capacities MCP server won't start without a valid API key.
+
+  - Open your `claude_desktop_config.json` and confirm that `CAPACITIES_API_KEY` is set inside the `env` block for the Capacities server entry.
+  - Test the key directly against the Capacities API to confirm it is active and has the required permissions.
+  - On Windows, use `cmd /c npx` as the command instead of `npx` directly — see the [Installation guide](/capacities/installation) for the exact config block.
+</Accordion>
+
+<Accordion title="Rate limit errors (429)">
+  The Capacities API enforces per-endpoint rate limits:
+
+  | Endpoint | Limit |
+  |----------|-------|
+  | Space info, spaces list | 5 requests / 60 s |
+  | Search | 120 requests / 60 s |
+
+  If you hit a 429, wait 60 seconds before retrying. If Claude is triggering rate limits automatically through repeated tool calls, reduce the frequency of prompts that scan multiple spaces in a single turn.
+</Accordion>
+
+<Accordion title="capacities_read_object_content returns incomplete content">
+  The Capacities API returns search snippets rather than full note bodies for most object types. This is a limitation of the Capacities API itself, not of the MCP server. Use search to locate the notes most relevant to your question — Claude will surface the best-matching snippets from each result.
+</Accordion>
+
+</AccordionGroup>
+
+## Remote MCP Server
+
+<AccordionGroup>
+
+<Accordion title="Worker not found / 404 on /mcp">
+  A 404 from the `/mcp` endpoint usually means the Cloudflare Worker did not deploy successfully or the URL is wrong.
+
+  - Re-run the deployment: `npm run deploy` and confirm it completes without errors.
+  - Check the exact URL format in your config — the path must end in `/mcp`, for example `https://your-worker.your-subdomain.workers.dev/mcp`.
+  - Verify your Cloudflare account is active and that the Workers plan allows deployments.
+</Accordion>
+
+<Accordion title="mcp-remote can't connect from Claude Desktop">
+  `mcp-remote` is required for Claude Desktop to reach remote MCP servers over HTTP.
+
+  - Install it globally: `npm install -g mcp-remote`
+  - Open a browser and paste your worker URL to confirm it is publicly reachable before testing with Claude.
+  - If you are behind a corporate firewall or VPN, check whether outbound HTTPS to `*.workers.dev` is permitted on your machine.
+</Accordion>
+
+</AccordionGroup>
+
+<Note>
+  If you encounter a bug that isn't covered here, or you want to request a new feature, open an issue on the relevant GitHub repository. Links are in the footer of each section's overview page.
+</Note>

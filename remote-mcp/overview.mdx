@@ -1,0 +1,50 @@
+---
+title: "Remote MCP Server: Deploy Your Own MCP Endpoint"
+sidebarTitle: "Overview"
+description: "Deploy a stateful, remote MCP server on Cloudflare Workers with Durable Objects — publicly accessible, no authentication required."
+---
+
+The `remote-mcp-server-authless` template gives you a ready-to-deploy Cloudflare Workers project for hosting your own remote MCP server. It requires no authentication and is fully public the moment you deploy it. The template ships with two working calculator tools so you can verify everything is running correctly — then you replace them with the tools your project actually needs.
+
+## When to use this
+
+Use this template when you want to:
+
+- **Share MCP tools publicly with a team** — deploy once and give everyone the same endpoint URL instead of asking each person to run a local server.
+- **Create a persistent tool endpoint** accessible from Claude Desktop, Claude Code, or the Cloudflare AI Playground — your tools are always on and reachable from any MCP-compatible client.
+- **Prototype custom MCP tools without local setup** — skip the local runtime configuration and iterate directly against a live, cloud-hosted endpoint.
+
+## Architecture
+
+The template is built on two Cloudflare primitives:
+
+- **Cloudflare Workers** handles incoming HTTP requests and routes the `/mcp` path to your MCP agent. Every other path returns a `404`.
+- **Durable Objects** maintains a stateful MCP session per connected client. Each client gets its own isolated session object, so concurrent connections don't interfere with each other.
+
+Your MCP endpoint is accessible at:
+
+```
+https://<your-worker>.workers.dev/mcp
+```
+
+Under the hood, the server uses `McpAgent` from the `agents` npm package to tie the Durable Object lifecycle to the MCP session, and `@modelcontextprotocol/sdk` to define and serve tools.
+
+## Included example tools
+
+The template registers two tools inside the `init()` method of `src/index.ts`:
+
+| Tool | Signature | Description |
+|---|---|---|
+| `add` | `add(a: number, b: number)` | Returns the sum of `a` and `b` as a string. |
+| `calculate` | `calculate(operation: "add" \| "subtract" \| "multiply" \| "divide", a: number, b: number)` | Performs the requested arithmetic operation. Returns `"Error: Cannot divide by zero"` when `operation` is `"divide"` and `b` is `0`. |
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Deploy" icon="rocket" href="/remote-mcp/deploy">
+    Deploy the template to Cloudflare Workers using the one-click button or Wrangler CLI.
+  </Card>
+  <Card title="Custom Tools" icon="wrench" href="/remote-mcp/customizing">
+    Replace the example calculator tools with your own tool definitions.
+  </Card>
+</CardGroup>
